@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지를 GIF로 변환</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #f8f9ff;
+            font-size: 14px;
+        }
+
+        input[type="file"]:hover {
+            background-color: #f0f2ff;
+        }
+
+        .file-count {
+            margin-top: 8px;
+            color: #667eea;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .file-count.error {
+            color: #e74c3c;
+        }
+
+        .preview-section {
+            margin-bottom: 25px;
+        }
+
+        .preview-label {
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: #e0e0e0;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-number {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-create:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-create:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-clear {
+            background: #ecf0f1;
+            color: #333;
+        }
+
+        .btn-clear:hover {
+            background: #d5dbdb;
+        }
+
+        .progress-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .progress-section.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+        }
+
+        .result-section {
+            display: none;
+            text-align: center;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-gif {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #ecf0f1;
+        }
+
+        .result-info {
+            background: #f8f9ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .error-message {
+            display: none;
+            background: #fadbd8;
+            color: #c0392b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 이미지를 GIF로 변환</h1>
+        <p class="subtitle">15장의 이미지를 선택하여 1초짜리 GIF를 만드세요</p>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="input-group">
+            <label for="imageInput">이미지 파일 선택 (15장 필수)</label>
+            <input type="file" id="imageInput" multiple accept="image/*">
+            <div class="file-count" id="fileCount">선택된 파일: 0장</div>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <div class="preview-label">미리보기</div>
+            <div class="preview-container" id="previewContainer"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-create" id="createBtn" disabled>GIF 생성</button>
+            <button class="btn-clear" id="clearBtn">초기화</button>
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">처리 중...</div>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <img id="resultGif" class="result-gif" alt="생성된 GIF">
+            <div class="result-info" id="resultInfo"></div>
+            <button class="download-btn" id="downloadBtn">다운로드</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+    <script>
+        let selectedFiles = [];
+        let resultGifBlob = null;
+
+        const imageInput = document.getElementById('imageInput');
+        const fileCount = document.getElementById('fileCount');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewSection = document.getElementById('previewSection');
+        const createBtn = document.getElementById('createBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultSection = document.getElementById('resultSection');
+        const resultGif = document.getElementById('resultGif');
+        const resultInfo = document.getElementById('resultInfo');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 파일 선택 이벤트
+        imageInput.addEventListener('change', handleFileSelect);
+        createBtn.addEventListener('click', createGif);
+        clearBtn.addEventListener('click', clearAll);
+        downloadBtn.addEventListener('click', downloadGif);
+
+        function handleFileSelect(e) {
+            selectedFiles = Array.from(e.target.files);
+            updateUI();
+        }
+
+        function updateUI() {
+            fileCount.textContent = `선택된 파일: ${selectedFiles.length}장`;
+            
+            if (selectedFiles.length > 0) {
+                previewSection.style.display = 'block';
+                displayPreviews();
+            } else {
+                previewSection.style.display = 'none';
+            }
+
+            if (selectedFiles.length === 15) {
+                createBtn.disabled = false;
+                fileCount.classList.remove('error');
+                errorMessage.classList.remove('show');
+            } else {
+                createBtn.disabled = true;
+                if (selectedFiles.length > 0 && selectedFiles.length !== 15) {
+                    fileCount.classList.add('error');
+                    errorMessage.classList.add('show');
+                    errorMessage.textContent = `⚠️ 정확히 15장을 선택해야 합니다. (현재: ${selectedFiles.length}장)`;
+                }
+            }
+        }
+
+        function displayPreviews() {
+            previewContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const item = document.createElement('div');
+                    item.className = 'preview-item';
+                    item.innerHTML = `
+                        <img src="${e.target.result}" alt="preview">
+                        <div class="preview-number">${index + 1}</div>
+                    `;
+                    previewContainer.appendChild(item);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function clearAll() {
+            imageInput.value = '';
+            selectedFiles = [];
+            previewContainer.innerHTML = '';
+            resultSection.classList.remove('show');
+            progressSection.classList.remove('show');
+            errorMessage.classList.remove('show');
+            fileCount.classList.remove('error');
+            updateUI();
+        }
+
+        async function createGif() {
+            if (selectedFiles.length !== 15) {
+                alert('정확히 15장의 이미지를 선택해주세요.');
+                return;
+            }
+
+            createBtn.disabled = true;
+            progressSection.classList.add('show');
+            resultSection.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            try {
+                const images = await Promise.all(
+                    selectedFiles.map((file, index) => loadImage(file, index))
+                );
+
+                // GIF 생성
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 10,
+                    width: images[0].width,
+                    height: images[0].height,
+                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                });
+
+                // 각 프레임 추가 (1초에 15프레임 = 약 67ms per frame)
+                images.forEach((img, index) => {
+                    progressFill.style.width = `${(index / images.length) * 100}%`;
+                    progressText.textContent = `프레임 처리 중... ${index + 1}/15`;
+                    gif.addFrame(img.canvas, { delay: 67 }); // 1000ms / 15 frames ≈ 67ms
+                });
+
+                gif.on('finished', (blob) => {
+                    resultGifBlob = blob;
+                    const url = URL.createObjectURL(blob);
+                    resultGif.src = url;
+                    resultInfo.innerHTML = `
+                        <strong>✅ GIF 생성 완료!</strong><br>
+                        크기: ${(blob.size / 1024).toFixed(2)} KB<br>
+                        재생 시간: 1초 (15 프레임)
+                    `;
+                    resultSection.classList.add('show');
+                    progressSection.classList.remove('show');
+                    createBtn.disabled = false;
+                });
+
+                gif.on('progress', (progress) => {
+                    progressFill.style.width = `${progress * 100}%`;
+                    progressText.textContent = `GIF 렌더링 중... ${Math.round(progress * 100)}%`;
+                });
+
+                gif.render();
+            } catch (error) {
+                console.error('GIF 생성 오류:', error);
+                errorMessage.classList.add('show');
+                errorMessage.textContent = `❌ 오류 발생: ${error.message}`;
+                progressSection.classList.remove('show');
+                createBtn.disabled = false;
+            }
+        }
+
+        function loadImage(file, index) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve({ canvas, width: img.width, height: img.height });
+                    };
+                    img.onerror = () => reject(new Error(`이미지 로드 실패: ${file.name}`));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error(`파일 읽기 실패: ${file.name}`));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function downloadGif() {
+            if (!resultGifBlob) return;
+            
+            const url = URL.createObjectURL(resultGifBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `animation-${new Date().getTime()}.gif`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
