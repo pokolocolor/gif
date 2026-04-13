@@ -450,16 +450,34 @@
                     selectedFiles.map((file, index) => loadImage(file, index))
                 );
 
-                const maxWidth = Math.min(images[0].width, 500);
+                const maxWidth = Math.min(images[0].width, 480);
                 const aspectRatio = images[0].height / images[0].width;
                 const maxHeight = Math.round(maxWidth * aspectRatio);
+
+                // Worker 스크립트를 Blob으로 생성하여 CORS 문제 해결
+                const workerScript = `
+                    self.onmessage = function(e) {
+                        var data = e.data;
+                        var image = data.image;
+                        var pixels = data.pixels;
+                        
+                        for (var i = 0; i < pixels.length; i++) {
+                            pixels[i] = image[i];
+                        }
+                        
+                        self.postMessage({ pixels: pixels });
+                    };
+                `;
+                
+                const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(workerBlob);
 
                 const gif = new GIF({
                     workers: 2,
                     quality: 10,
                     width: maxWidth,
                     height: maxHeight,
-                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                    workerScript: workerUrl
                 });
 
                 images.forEach((img, index) => {
@@ -479,6 +497,7 @@
                     resultSection.classList.add('show');
                     progressSection.classList.remove('show');
                     createBtn.disabled = false;
+                    URL.revokeObjectURL(workerUrl);
                 });
 
                 gif.on('progress', (progress) => {
@@ -486,11 +505,15 @@
                     progressText.textContent = `렌더링: ${Math.round(progress * 100)}%`;
                 });
 
+                gif.on('error', (error) => {
+                    throw error;
+                });
+
                 gif.render();
             } catch (error) {
                 console.error('에러:', error);
                 errorMessage.classList.add('show');
-                errorMessage.textContent = `❌ ${error.message}`;
+                errorMessage.textContent = `❌ ${error.message || '알 수 없는 오류'}`;
                 progressSection.classList.remove('show');
                 createBtn.disabled = false;
             }
@@ -503,8 +526,8 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        canvas.width = 500;
-                        canvas.height = Math.round(500 * (img.height / img.width));
+                        canvas.width = 480;
+                        canvas.height = Math.round(480 * (img.height / img.width));
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         resolve({ canvas, width: canvas.width, height: canvas.height });
