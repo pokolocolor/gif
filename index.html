@@ -343,8 +343,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifenc@0.0.3/dist/gifenc.js"></script>
 
     <script>
         let selectedFiles = [];
@@ -440,49 +439,47 @@
 
             try {
                 progressText.textContent = '이미지 로드 중...';
+                progressFill.style.width = '10%';
+
+                // 이미지 로드
                 const images = await Promise.all(
                     selectedFiles.map((file, index) => {
-                        progressFill.style.width = `${(index / 15) * 30}%`;
+                        progressFill.style.width = `${10 + (index / 15) * 20}%`;
                         return loadImage(file);
                     })
                 );
 
-                progressFill.style.width = '30%';
-                progressText.textContent = 'GIF 생성 중...';
+                progressFill.style.width = '40%';
+                progressText.textContent = 'GIF 인코딩 중...';
 
-                // GIF 생성 - gif.js 올바른 사용법
-                const gif = new GIF({
-                    workers: 2,
-                    quality: 10,
-                    width: images[0].width,
-                    height: images[0].height,
-                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                // gifenc로 GIF 생성
+                const gif = new window.GifEncoder(images[0].width, images[0].height);
+                gif.setDelay(67); // 1000 / 15 = 67ms per frame
+                gif.setQuality(10);
+
+                images.forEach((img, index) => {
+                    progressFill.style.width = `${40 + (index / 15) * 50}%`;
+                    progressText.textContent = `프레임 추가: ${index + 1}/15`;
+                    gif.addFrame(img.canvas);
                 });
 
-                images.forEach((img) => {
-                    gif.addFrame(img.canvas, { delay: 67 });
-                });
+                progressFill.style.width = '95%';
+                progressText.textContent = '파일 생성 중...';
 
-                gif.on('progress', (progress) => {
-                    const renderProgress = 30 + (progress * 70);
-                    progressFill.style.width = `${renderProgress}%`;
-                    progressText.textContent = `렌더링: ${Math.round(progress * 100)}%`;
-                });
+                gif.end();
+                const buffer = gif.out.getData();
+                const blob = new Blob([buffer], { type: 'image/gif' });
 
-                gif.on('finished', function(blob) {
-                    resultGifBlob = blob;
-                    const url = URL.createObjectURL(blob);
-                    resultGif.src = url;
-                    resultInfo.innerHTML = `
-                        ✅ 완료!<br>
-                        크기: ${(blob.size / 1024).toFixed(1)} KB
-                    `;
-                    resultSection.classList.add('show');
-                    progressSection.classList.remove('show');
-                    createBtn.disabled = false;
-                });
-
-                gif.render();
+                resultGifBlob = blob;
+                const url = URL.createObjectURL(blob);
+                resultGif.src = url;
+                resultInfo.innerHTML = `
+                    ✅ 완료!<br>
+                    크기: ${(blob.size / 1024).toFixed(1)} KB
+                `;
+                resultSection.classList.add('show');
+                progressSection.classList.remove('show');
+                createBtn.disabled = false;
 
             } catch (error) {
                 console.error('에러:', error);
@@ -500,7 +497,7 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const maxWidth = 320;
+                        const maxWidth = 300;
                         const scale = maxWidth / img.width;
                         canvas.width = maxWidth;
                         canvas.height = Math.round(img.height * scale);
